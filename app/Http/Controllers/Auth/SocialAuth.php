@@ -15,7 +15,7 @@ class SocialAuth extends Controller
 {
     public function __construct(protected SocialAuthService $socialAuthService){}
 
-    #[Endpoint(operationId: 'socialAuthRedirect', title: 'Gerar URL de login social', description: '**operationId:** `socialAuthRedirect` — Monta a URL de autorização do provedor social informado no path e a devolve para o client, que faz o redirecionamento. O `provider` é validado em `RedirectRequest`, que o injeta a partir do parâmetro de rota em `prepareForValidation()`, e precisa ser um valor do enum `App\\SocialLoginProviders` — hoje `google` ou `microsoft`. O driver do Socialite é usado em modo `stateless()`, ou seja, sem sessão: o fluxo serve a clients de API. Em **200**, `data` traz apenas `url`, a URL de autorização do provedor. Não requer autenticação.')]
+    #[Endpoint(operationId: 'socialAuthRedirect', title: 'Gerar URL de login social', description: '**operationId:** `socialAuthRedirect` — Monta a URL de autorização do provedor social informado no path e a devolve para o client, que faz o redirecionamento. O `provider` é validado em `RedirectRequest`, que o injeta a partir do parâmetro de rota em `prepareForValidation()`, e precisa ser um valor do enum `App\\Enums\\SocialLoginProviders` — hoje `google`, `microsoft` ou `github`. O driver do Socialite é usado em modo `stateless()`, ou seja, sem sessão: o fluxo serve a clients de API. Em **200**, `data` traz apenas `url`, a URL de autorização do provedor. Não requer autenticação.')]
     public function redirect(RedirectRequest $request): JsonResponse
     {
         try {
