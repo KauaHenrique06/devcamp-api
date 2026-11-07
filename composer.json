@@ -12,6 +12,8 @@
         "php": "^8.3",
         "dedoc/scramble": "^0.13.43",
         "laravel/framework": "^13.0",
+        "laravel/horizon": "^5.50",
+        "laravel/reverb": "^1.12",
         "laravel/socialite": "^5.31",
         "laravel/tinker": "^3.0",
         "socialiteproviders/microsoft": "^4.10",
@@ -61,7 +63,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names='server,queue,vite'"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan horizon\" \"npm run dev\" --names='server,horizon,vite'"
         ]
     },
     "extra": {
