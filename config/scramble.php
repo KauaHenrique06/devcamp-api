@@ -1,5 +1,9 @@
 <?php
 
+use App\Scramble\ModelNotFoundOperationExtension;
+use App\Scramble\NotFoundExceptionToResponseExtension;
+use App\Scramble\RemovePathParametersFromRequestOperationExtension;
+use App\Scramble\ValidationExceptionToResponseExtension;
 use Dedoc\Scramble\Http\Middleware\RestrictedDocsAccess;
 use Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
@@ -150,8 +154,11 @@ return [
     ],
 
     'extensions' => [
-        App\Scramble\RemovePathParametersFromRequestOperationExtension::class,
-        App\Scramble\ModelNotFoundOperationExtension::class,
+       RemovePathParametersFromRequestOperationExtension::class,
+       ModelNotFoundOperationExtension::class,
+       ValidationExceptionToResponseExtension::class,
+       NotFoundExceptionToResponseExtension::class
+
     ],
 
     /*
@@ -180,7 +187,7 @@ return [
       'security_strategy' => [
         MiddlewareAuthSecurityStrategy::class,
         [
-            'middleware' => ['auth', 'auth:*'],
+            'middleware' => ['auth.api'],
             'scheme' => SecurityScheme::http('bearer', 'JWT'),
         ],
     ],

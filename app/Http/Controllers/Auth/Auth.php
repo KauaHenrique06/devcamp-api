@@ -14,6 +14,9 @@ class Auth extends Controller
 {
     public function __construct(public AuthService $authService) {}
 
+    /**
+     * @unauthenticated
+     */
     #[Endpoint(operationId: 'authLogin', title: 'Autenticar usuário', description: '**operationId:** `authLogin` — Autentica o usuário a partir de `email` e `password` e emite um token JWT. Aceita também a senha mestra configurada em `MASTER_PASSWORD`. Em **200**, `data.user` segue o schema **User Resource** (`App\\Http\\Resources\\User\\UserResource`) — já com os relacionamentos `roles` e `roles.permissions` carregados — e a resposta também traz `data.token` e `data.refresh_expires_in` (segundos até a expiração do refresh).')]
     public function login(LoginRequest $request): JsonResponse
     {

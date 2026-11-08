@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Console\Commands\PermissionSyncCommand;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use SocialiteProviders\Manager\SocialiteWasCalled;
@@ -29,5 +32,8 @@ class AppServiceProvider extends ServiceProvider
         $this->commands([
             PermissionSyncCommand::class,
         ]);
+
+
+
     }
 }

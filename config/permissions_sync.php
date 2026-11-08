@@ -23,6 +23,10 @@ return [
         'roles.update' => 'Editar roles',
         'roles.delete' => 'Excluir roles',
         'permissions.view' => 'Visualizar permissões',
+        'organizations.view' => 'Visualizar organizações',
+        'organizations.create' => 'Criar organizações',
+        'organizations.update' => 'Editar organizações',
+        'organizations.delete' => 'Excluir organizações',
     ],
 
     /*
@@ -39,6 +43,7 @@ return [
         'roles' => 'Cargos',
         'administrators' => 'Administradores',
         'permissions' => 'Permissões',
+        'organizations' => 'Organizações',
     ],
 
 ];
