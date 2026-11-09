@@ -1,21 +1,24 @@
 <?php
 
 use App\Http\Controllers\Organization\Organization;
+use App\Http\Controllers\Organization\OrganizationMember;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth.api', 'can:organizations.view'])->group(function () {
+/*
+| As permissões (Spatie) e o papel do usuário em cada organização são
+| verificados na OrganizationPolicy, chamada pelos services.
+*/
+Route::middleware(['auth.api'])->group(function () {
     Route::get('/', [Organization::class, 'index']);
-    Route::get('/{id}', [Organization::class, 'show']);
-});
-
-Route::middleware(['auth.api', 'can:organizations.create'])->group(function () {
     Route::post('/', [Organization::class, 'store']);
-});
-
-Route::middleware(['auth.api', 'can:organizations.update'])->group(function () {
+    Route::get('/{id}', [Organization::class, 'show']);
     Route::put('/{id}', [Organization::class, 'update']);
-});
-
-Route::middleware(['auth.api', 'can:organizations.delete'])->group(function () {
     Route::delete('/{id}', [Organization::class, 'delete']);
+
+    Route::prefix('/{id}/members')->group(function () {
+        Route::get('/', [OrganizationMember::class, 'index']);
+        Route::post('/', [OrganizationMember::class, 'store']);
+        Route::put('/{userId}', [OrganizationMember::class, 'update']);
+        Route::delete('/{userId}', [OrganizationMember::class, 'delete']);
+    });
 });

@@ -27,6 +27,8 @@ return [
         'organizations.create' => 'Criar organizações',
         'organizations.update' => 'Editar organizações',
         'organizations.delete' => 'Excluir organizações',
+        'organizations.members.view' => 'Visualizar membros das organizações',
+        'organizations.members.manage' => 'Gerenciar membros das organizações',
     ],
 
     /*

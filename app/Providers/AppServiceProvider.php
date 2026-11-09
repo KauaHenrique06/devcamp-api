@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Console\Commands\PermissionSyncCommand;
+use App\Support\Tenancy\CurrentOrganization;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
@@ -17,7 +18,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Uma instância por requisição (zera entre requisições).
+        $this->app->scoped(CurrentOrganization::class);
     }
 
     /**
