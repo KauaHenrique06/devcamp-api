@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Enums\OrganizationRole;
-use Illuminate\Database\Eloquent\Builder;
+use App\Traits\Tenantable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Organization extends Model
 {
-    use HasUuids, SoftDeletes;
+    use HasUuids, SoftDeletes, Tenantable;
 
     protected $fillable = [
         'name',
@@ -27,19 +27,12 @@ class Organization extends Model
             ->withTimestamps();
     }
 
-    /**
-     * Scope local: só as organizações das quais o usuário é membro.
-     * Uso: Organization::visibleTo($user)->get()
-     */
-    public function scopeVisibleTo(Builder $query, User $user): Builder
+    /** Papel do usuário (model ou id) nesta organização, ou null se ele não for membro. */
+    public function roleOf(User|string $user): ?OrganizationRole
     {
-        return $query->whereHas('members', fn (Builder $q) => $q->whereKey($user->getKey()));
-    }
+        $userId = $user instanceof User ? $user->getKey() : $user;
 
-    /** Papel do usuário nesta organização, ou null se ele não for membro. */
-    public function roleOf(User $user): ?OrganizationRole
-    {
-        $role = $this->members()->whereKey($user->getKey())->value('organization_user.role');
+        $role = $this->members()->whereKey($userId)->value('organization_user.role');
 
         return $role ? OrganizationRole::from($role) : null;
     }

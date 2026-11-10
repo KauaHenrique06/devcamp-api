@@ -10,15 +10,12 @@ use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 
 class OrganizationMemberService
 {
-    public function index(array $data, User $user): OrganizationMemberCollection
+    public function index(array $data): OrganizationMemberCollection
     {
         $organization = Organization::findOrFail($data['id']);
-
-        Gate::forUser($user)->authorize('viewMembers', $organization);
 
         $search = $data['search'] ?? null;
 
@@ -35,13 +32,10 @@ class OrganizationMemberService
         return new OrganizationMemberCollection($members);
     }
 
-    public function store(array $data, User $user): OrganizationMemberResource
+    public function store(array $data): OrganizationMemberResource
     {
         $organization = Organization::findOrFail($data['id']);
         $role = OrganizationRole::from($data['role']);
-
-        Gate::forUser($user)->authorize('addMember', [$organization, $role]);
-
         $member = User::findOrFail($data['user_id']);
 
         if ($organization->roleOf($member)) {
@@ -53,13 +47,11 @@ class OrganizationMemberService
         return $this->memberResource($organization, $member);
     }
 
-    public function update(array $data, User $user): OrganizationMemberResource
+    public function update(array $data): OrganizationMemberResource
     {
         $organization = Organization::findOrFail($data['id']);
         $member = $this->findMember($organization, $data['user_id']);
         $newRole = OrganizationRole::from($data['role']);
-
-        Gate::forUser($user)->authorize('updateMember', [$organization, $member, $newRole]);
 
         DB::transaction(function () use ($organization, $member, $newRole) {
             // lockForUpdate evita que duas requisições simultâneas removam os dois últimos donos.
@@ -75,12 +67,10 @@ class OrganizationMemberService
         return $this->memberResource($organization, $member);
     }
 
-    public function delete(array $data, User $user): void
+    public function delete(array $data): void
     {
         $organization = Organization::findOrFail($data['id']);
         $member = $this->findMember($organization, $data['user_id']);
-
-        Gate::forUser($user)->authorize('removeMember', [$organization, $member]);
 
         DB::transaction(function () use ($organization, $member) {
             $this->lockMembers($organization);

@@ -23,7 +23,6 @@ return Application::configure(basePath: dirname(__DIR__))
         
         $middleware->alias([
             'feature' => \App\Http\Middleware\EnsureFeatureIsEnable::class,
-            'organization' => \App\Http\Middleware\ResolveCurrentOrganization::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

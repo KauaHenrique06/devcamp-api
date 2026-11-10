@@ -9,6 +9,7 @@ use App\Http\Requests\Organization\OrganizationIndexRequest;
 use App\Http\Requests\Organization\OrganizationShowRequest;
 use App\Http\Requests\Organization\OrganizationStoreRequest;
 use App\Http\Requests\Organization\OrganizationUpdateRequest;
+use App\Models\Organization as OrganizationModel;
 use App\Services\Organization\OrganizationService;
 use Dedoc\Scramble\Attributes\Endpoint;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -23,7 +24,9 @@ class Organization extends Controller
     public function index(OrganizationIndexRequest $request): JsonResponse
     {
         try {
-            $data = $this->organizationService->index($request->validated(), $request->user());
+            $this->authorize('viewAny', OrganizationModel::class);
+
+            $data = $this->organizationService->index($request->validated());
 
             return ReturnApi::success($data, 'Organizações listadas com sucesso.');
         } catch (AuthorizationException $e) {
@@ -47,7 +50,9 @@ class Organization extends Controller
     public function show(OrganizationShowRequest $request): JsonResponse
     {
         try {
-            $data = $this->organizationService->show($request->validated(), $request->user());
+            $this->authorize('view', [OrganizationModel::class, $request->validated('id')]);
+
+            $data = $this->organizationService->show($request->validated());
 
             return ReturnApi::success($data, 'Organização encontrada.');
         } catch (ModelNotFoundException $e) {
@@ -78,7 +83,9 @@ class Organization extends Controller
     public function store(OrganizationStoreRequest $request): JsonResponse
     {
         try {
-            $data = $this->organizationService->store($request->validated(), $request->user());
+            $this->authorize('create', OrganizationModel::class);
+
+            $data = $this->organizationService->store($request->validated());
 
             return ReturnApi::success($data, 'Organização cadastrada com sucesso.', 201);
         } catch (AuthorizationException $e) {
@@ -102,7 +109,9 @@ class Organization extends Controller
     public function update(OrganizationUpdateRequest $request): JsonResponse
     {
         try {
-            $data = $this->organizationService->update($request->validated(), $request->user());
+            $this->authorize('update', [OrganizationModel::class, $request->validated('id')]);
+
+            $data = $this->organizationService->update($request->validated());
 
             return ReturnApi::success($data, 'Organização atualizada com sucesso.');
         } catch (ModelNotFoundException $e) {
@@ -133,7 +142,9 @@ class Organization extends Controller
     public function delete(OrganizationDeleteRequest $request): JsonResponse
     {
         try {
-            $this->organizationService->delete($request->validated(), $request->user());
+            $this->authorize('delete', [OrganizationModel::class, $request->validated('id')]);
+
+            $this->organizationService->delete($request->validated());
 
             return ReturnApi::success(null, 'Organização excluída com sucesso.');
         } catch (ModelNotFoundException $e) {

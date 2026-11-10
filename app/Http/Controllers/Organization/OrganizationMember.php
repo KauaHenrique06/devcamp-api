@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Organization;
 
 use App\Builder\ReturnApi;
+use App\Enums\OrganizationRole;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Organization\OrganizationMemberDeleteRequest;
 use App\Http\Requests\Organization\OrganizationMemberIndexRequest;
 use App\Http\Requests\Organization\OrganizationMemberStoreRequest;
 use App\Http\Requests\Organization\OrganizationMemberUpdateRequest;
+use App\Models\Organization;
 use App\Services\Organization\OrganizationMemberService;
 use Dedoc\Scramble\Attributes\Endpoint;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -23,7 +25,9 @@ class OrganizationMember extends Controller
     public function index(OrganizationMemberIndexRequest $request): JsonResponse
     {
         try {
-            $data = $this->memberService->index($request->validated(), $request->user());
+            $this->authorize('viewMembers', [Organization::class, $request->validated('id')]);
+
+            $data = $this->memberService->index($request->validated());
 
             return ReturnApi::success($data, 'Membros listados com sucesso.');
         } catch (ModelNotFoundException $e) {
@@ -47,7 +51,13 @@ class OrganizationMember extends Controller
     public function store(OrganizationMemberStoreRequest $request): JsonResponse
     {
         try {
-            $data = $this->memberService->store($request->validated(), $request->user());
+            $this->authorize('addMember', [
+                Organization::class,
+                $request->validated('id'),
+                OrganizationRole::from($request->validated('role')),
+            ]);
+
+            $data = $this->memberService->store($request->validated());
 
             return ReturnApi::success($data, 'Membro adicionado com sucesso.', 201);
         } catch (ModelNotFoundException $e) {
@@ -78,7 +88,14 @@ class OrganizationMember extends Controller
     public function update(OrganizationMemberUpdateRequest $request): JsonResponse
     {
         try {
-            $data = $this->memberService->update($request->validated(), $request->user());
+            $this->authorize('updateMember', [
+                Organization::class,
+                $request->validated('id'),
+                $request->validated('user_id'),
+                OrganizationRole::from($request->validated('role')),
+            ]);
+
+            $data = $this->memberService->update($request->validated());
 
             return ReturnApi::success($data, 'Membro atualizado com sucesso.');
         } catch (ModelNotFoundException $e) {
@@ -109,7 +126,9 @@ class OrganizationMember extends Controller
     public function delete(OrganizationMemberDeleteRequest $request): JsonResponse
     {
         try {
-            $this->memberService->delete($request->validated(), $request->user());
+            $this->authorize('removeMember', [Organization::class, $request->validated('id'), $request->validated('user_id')]);
+
+            $this->memberService->delete($request->validated());
 
             return ReturnApi::success(null, 'Membro removido com sucesso.');
         } catch (ModelNotFoundException $e) {

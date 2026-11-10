@@ -6,10 +6,9 @@ use App\Enums\OrganizationRole;
 use App\Http\Resources\Organization\OrganizationCollection;
 use App\Http\Resources\Organization\OrganizationResource;
 use App\Models\Organization;
-use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class OrganizationService
@@ -18,17 +17,13 @@ class OrganizationService
 
     private const LOGO_DIRECTORY = 'organizations/logos';
 
-    public function index(array $data, User $user): OrganizationCollection
+    public function index(array $data): OrganizationCollection
     {
-        Gate::forUser($user)->authorize('viewAny', Organization::class);
-
         $perPage = (int) ($data['per_page'] ?? 10);
         $page = (int) ($data['page'] ?? 1);
         $search = $data['search'] ?? null;
 
         $paginate = Organization::query()
-            // Admin do sistema vê todas; os demais só as organizações das quais são membros.
-            ->unless($user->hasRole('admin'), fn ($query) => $query->visibleTo($user))
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->whereLike('name', "%{$search}%")
@@ -41,23 +36,17 @@ class OrganizationService
         return new OrganizationCollection($paginate);
     }
 
-    public function show(array $data, User $user): OrganizationResource
+    public function show(array $data): OrganizationResource
     {
-        $organization = Organization::findOrFail($data['id']);
-
-        Gate::forUser($user)->authorize('view', $organization);
-
-        return new OrganizationResource($organization);
+        return new OrganizationResource(Organization::findOrFail($data['id']));
     }
 
-    public function store(array $data, User $user): OrganizationResource
+    public function store(array $data): OrganizationResource
     {
-        Gate::forUser($user)->authorize('create', Organization::class);
-
         $logoPath = $this->storeLogo($data['logo'] ?? null);
 
         try {
-            return DB::transaction(function () use ($data, $logoPath, $user): OrganizationResource {
+            return DB::transaction(function () use ($data, $logoPath): OrganizationResource {
                 $organization = Organization::create([
                     'name' => $data['name'],
                     'slug' => $data['slug'],
@@ -66,7 +55,7 @@ class OrganizationService
                 ]);
 
                 // Quem cria a organização vira o dono dela.
-                $organization->members()->attach($user->getKey(), ['role' => OrganizationRole::OWNER->value]);
+                $organization->members()->attach(Auth::id(), ['role' => OrganizationRole::OWNER->value]);
 
                 return new OrganizationResource($organization);
             });
@@ -78,11 +67,9 @@ class OrganizationService
         }
     }
 
-    public function update(array $data, User $user): OrganizationResource
+    public function update(array $data): OrganizationResource
     {
         $organization = Organization::findOrFail($data['id']);
-
-        Gate::forUser($user)->authorize('update', $organization);
 
         $newLogoPath = $this->storeLogo($data['logo'] ?? null);
         $oldLogoPath = $organization->logo;
@@ -112,11 +99,9 @@ class OrganizationService
         return $resource;
     }
 
-    public function delete(array $data, User $user): void
+    public function delete(array $data): void
     {
         $organization = Organization::findOrFail($data['id']);
-
-        Gate::forUser($user)->authorize('delete', $organization);
 
         DB::transaction(function () use ($organization) {
             $organization->delete();

@@ -8,9 +8,13 @@ use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
 /**
+ * Chamada no controller: $this->authorize('update', [Organization::class, $id]).
+ *
  * Cada regra combina duas checagens:
  *  1. Permissão do Spatie: o cargo do usuário permite essa ação? (ex.: organizations.update)
  *  2. Papel na organização: ele é owner/admin/member DESTA organização?
+ *
+ * Quem não é membro nem chega aqui com a organização: o TenantScope faz o findOrFail dar 404.
  */
 class OrganizationPolicy
 {
@@ -30,63 +34,60 @@ class OrganizationPolicy
         return $user->can('organizations.create');
     }
 
-    public function view(User $user, Organization $organization): Response
+    public function view(User $user, string $id): Response
     {
         if (! $user->can('organizations.view')) {
             return Response::deny('Você não tem permissão para visualizar organizações.');
         }
 
-        // Quem não é membro recebe 404: nem fica sabendo que a organização existe.
-        return $organization->roleOf($user)
-            ? Response::allow()
-            : Response::denyAsNotFound('Organização não encontrada.');
+        Organization::findOrFail($id);
+
+        return Response::allow();
     }
 
-    public function update(User $user, Organization $organization): Response
+    public function update(User $user, string $id): Response
     {
         if (! $user->can('organizations.update')) {
             return Response::deny('Você não tem permissão para editar organizações.');
         }
 
-        return $this->requireRole($user, $organization, fn (OrganizationRole $role) => $role->canManage(),
-            'Apenas o dono ou um administrador da organização pode editá-la.');
+        return $this->myRole($user, $id)?->canManage()
+            ? Response::allow()
+            : Response::deny('Apenas o dono ou um administrador da organização pode editá-la.');
     }
 
-    public function delete(User $user, Organization $organization): Response
+    public function delete(User $user, string $id): Response
     {
         if (! $user->can('organizations.delete')) {
             return Response::deny('Você não tem permissão para excluir organizações.');
         }
 
-        return $this->requireRole($user, $organization, fn (OrganizationRole $role) => $role === OrganizationRole::OWNER,
-            'Apenas o dono pode excluir a organização.');
+        return $this->myRole($user, $id) === OrganizationRole::OWNER
+            ? Response::allow()
+            : Response::deny('Apenas o dono pode excluir a organização.');
     }
 
-    public function viewMembers(User $user, Organization $organization): Response
+    public function viewMembers(User $user, string $id): Response
     {
         if (! $user->can('organizations.members.view')) {
             return Response::deny('Você não tem permissão para visualizar membros.');
         }
 
-        return $organization->roleOf($user)
-            ? Response::allow()
-            : Response::denyAsNotFound('Organização não encontrada.');
+        Organization::findOrFail($id);
+
+        return Response::allow();
     }
 
     /** Adicionar membro. Só o owner pode adicionar outro owner. */
-    public function addMember(User $user, Organization $organization, OrganizationRole $newRole): Response
+    public function addMember(User $user, string $id, OrganizationRole $newRole): Response
     {
         if (! $user->can('organizations.members.manage')) {
             return Response::deny('Você não tem permissão para gerenciar membros.');
         }
 
-        $myRole = $organization->roleOf($user);
+        $myRole = $this->myRole($user, $id);
 
-        if (! $myRole) {
-            return Response::denyAsNotFound('Organização não encontrada.');
-        }
-
-        if (! $myRole->canManage()) {
+        if (! $myRole?->canManage()) {
             return Response::deny('Apenas o dono ou um administrador pode adicionar membros.');
         }
 
@@ -98,24 +99,21 @@ class OrganizationPolicy
     }
 
     /** Alterar o papel de um membro. Admin não mexe em owner nem promove a owner. */
-    public function updateMember(User $user, Organization $organization, User $member, OrganizationRole $newRole): Response
+    public function updateMember(User $user, string $id, string $memberId, OrganizationRole $newRole): Response
     {
         if (! $user->can('organizations.members.manage')) {
             return Response::deny('Você não tem permissão para gerenciar membros.');
         }
 
+        $organization = Organization::findOrFail($id);
         $myRole = $organization->roleOf($user);
 
-        if (! $myRole) {
-            return Response::denyAsNotFound('Organização não encontrada.');
-        }
-
-        if (! $myRole->canManage()) {
+        if (! $myRole?->canManage()) {
             return Response::deny('Apenas o dono ou um administrador pode alterar membros.');
         }
 
         $touchesOwner = $newRole === OrganizationRole::OWNER
-            || $organization->roleOf($member) === OrganizationRole::OWNER;
+            || $organization->roleOf($memberId) === OrganizationRole::OWNER;
 
         if ($touchesOwner && $myRole !== OrganizationRole::OWNER) {
             return Response::deny('Apenas o dono pode alterar o papel de dono.');
@@ -125,15 +123,11 @@ class OrganizationPolicy
     }
 
     /** Remover membro. Qualquer membro pode sair (remover a si mesmo). */
-    public function removeMember(User $user, Organization $organization, User $member): Response
+    public function removeMember(User $user, string $id, string $memberId): Response
     {
-        $myRole = $organization->roleOf($user);
+        $organization = Organization::findOrFail($id);
 
-        if (! $myRole) {
-            return Response::denyAsNotFound('Organização não encontrada.');
-        }
-
-        if ($member->is($user)) {
+        if ($memberId === $user->getKey()) {
             return Response::allow();
         }
 
@@ -141,26 +135,21 @@ class OrganizationPolicy
             return Response::deny('Você não tem permissão para gerenciar membros.');
         }
 
-        if (! $myRole->canManage()) {
+        $myRole = $organization->roleOf($user);
+
+        if (! $myRole?->canManage()) {
             return Response::deny('Apenas o dono ou um administrador pode remover membros.');
         }
 
-        if ($organization->roleOf($member) === OrganizationRole::OWNER && $myRole !== OrganizationRole::OWNER) {
+        if ($organization->roleOf($memberId) === OrganizationRole::OWNER && $myRole !== OrganizationRole::OWNER) {
             return Response::deny('Apenas o dono pode remover outro dono.');
         }
 
         return Response::allow();
     }
 
-    /** @param  callable(OrganizationRole): bool  $allowed */
-    private function requireRole(User $user, Organization $organization, callable $allowed, string $message): Response
+    private function myRole(User $user, string $id): ?OrganizationRole
     {
-        $role = $organization->roleOf($user);
-
-        if (! $role) {
-            return Response::denyAsNotFound('Organização não encontrada.');
-        }
-
-        return $allowed($role) ? Response::allow() : Response::deny($message);
+        return Organization::findOrFail($id)->roleOf($user);
     }
 }
