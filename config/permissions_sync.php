@@ -29,6 +29,32 @@ return [
         'organizations.delete' => 'Excluir organizações',
         'organizations.members.view' => 'Visualizar membros das organizações',
         'organizations.members.manage' => 'Gerenciar membros das organizações',
+        'projects.view' => 'Visualizar projetos',
+        'projects.create' => 'Criar projetos',
+        'projects.update' => 'Editar projetos',
+        'projects.delete' => 'Excluir projetos',
+        'projects.restore' => 'Restaurar projetos',
+        'projects.archive' => 'Arquivar projetos',
+        'projects.force-delete' => 'Excluir projetos permanentemente',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Permissões da role user (usuário comum)
+    |--------------------------------------------------------------------------
+    |
+    | O comando `php artisan permission:sync-user` dá à role user todas as
+    | permissões da lista acima, exceto as que casarem com estes padrões
+    | (aceita curinga `*`, ex.: `roles.*`).
+    |
+    */
+
+    'user_role' => [
+        'name' => 'user',
+        'except' => [
+            'roles.*',
+            'permissions.*',
+        ],
     ],
 
     /*
@@ -46,6 +72,7 @@ return [
         'administrators' => 'Administradores',
         'permissions' => 'Permissões',
         'organizations' => 'Organizações',
+        'projects' => 'Projetos',
     ],
 
 ];

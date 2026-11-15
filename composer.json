@@ -17,6 +17,7 @@
         "laravel/socialite": "^5.31",
         "laravel/tinker": "^3.0",
         "socialiteproviders/microsoft": "^4.10",
+        "spatie/laravel-medialibrary": "^11.23",
         "spatie/laravel-permission": "^6.24",
         "tymon/jwt-auth": "^2.1"
     },

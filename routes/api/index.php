@@ -21,3 +21,4 @@ Route::prefix('/permissions')->group(base_path('routes/api/permissions.php'));
 Route::prefix('/roles')->group(base_path('routes/api/roles.php'));
 Route::prefix('/users')->group(base_path('routes/api/users.php'));
 Route::prefix('/organizations')->group(base_path('routes/api/organizations.php'));
+Route::prefix('/projects')->group(base_path('routes/api/projects.php'));
