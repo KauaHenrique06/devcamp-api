@@ -8,11 +8,14 @@ use App\Http\Resources\Organization\OrganizationMemberCollection;
 use App\Http\Resources\Organization\OrganizationMemberResource;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\Project\ProjectMemberService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 
 class OrganizationMemberService
 {
+    public function __construct(protected ProjectMemberService $projectMemberService) {}
+
     public function index(array $data): OrganizationMemberCollection
     {
         $organization = Organization::findOrFail($data['id']);
@@ -43,6 +46,10 @@ class OrganizationMemberService
         }
 
         DB::transaction(fn () => $organization->members()->attach($member->getKey(), ['role' => $role->value]));
+
+        if(in_array($role, [OrganizationRole::OWNER, OrganizationRole::ADMIN])) {
+            $this->projectMemberService->syncAllProjectManagers($organization);
+        }
 
         return $this->memberResource($organization, $member);
     }

@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\DB;
 class ProjectService 
 {
     public function __construct(
-        protected CurrentOrganization $currentOrganization
+        protected CurrentOrganization $currentOrganization,
+        protected ProjectMemberService $projectMemberService
     ) {}
 
     public function index(array $data): ProjectCollection
@@ -38,7 +39,7 @@ class ProjectService
 
     public function show(array $data): ProjectResource 
     {
-        $project = Project::with(['organization', 'creator'])
+        $project = Project::with(['organization', 'creator', 'members'])
             ->findOrFail($data['id']);
 
         return new ProjectResource($project);
@@ -60,6 +61,11 @@ class ProjectService
             if ( ! empty($data['logo']) ) {
                 $project->addMedia($data['logo'])->toMediaCollection('logo');
             }
+
+                        
+            // Precisa vir antes de qualquer consulta a Project: até aqui o projeto não tem membros
+            // e o scope de membro o esconde de todos (inclusive do criador).
+            $this->projectMemberService->syncProjectManagersBasedOnOrganizationManagers($project);
 
             return new ProjectResource($project);
         });

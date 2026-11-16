@@ -106,7 +106,7 @@ class ProjectPolicy
      */
     public function forceDelete(User $user): Response
     {
-        if( !$user->can('projects.update') ) {
+        if( !$user->can('projects.force-delete') ) {
             return Response::deny('Voce nao tem permissao para remover permanentemente um projeto!');
         }
 

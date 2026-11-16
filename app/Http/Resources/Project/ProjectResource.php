@@ -25,6 +25,7 @@ class ProjectResource extends JsonResource
             'is_archived' => $this->is_archived,
             'organization' => new OrganizationResource($this->whenLoaded('organization')),
             'creator' => new UserResource($this->whenLoaded('creator')),
+            'members' => $this->whenLoaded('members', fn () => UserResource::collection($this->members)),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'deleted_at' => $this->deleted_at,
