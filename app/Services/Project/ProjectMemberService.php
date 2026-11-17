@@ -4,13 +4,44 @@ namespace App\Services\Project;
 
 use App\Enums\OrganizationRole;
 use App\Enums\ProjectRole;
+use App\Http\Resources\Project\ProjectResource;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\Scopes\TenantScope;
 use Illuminate\Support\Collection;
-
+use Illuminate\Support\Facades\DB;
+ 
 class ProjectMemberService 
 {
+    public function attachNewMembers(array $data): ProjectResource
+    {
+        $project = Project::findOrFail($data['id']);
+
+        $members = collect($data['users'])
+            ->mapWithKeys(fn (array $user) => [
+                    $user['id'] => ['role' => ProjectRole::from($user['role'])->value]
+                ]
+            )
+            ->all();
+
+        return DB::transaction(function () use ($project, $members) {
+            $project->members()->syncWithoutDetaching($members);
+
+            return new ProjectResource($project);
+        }); 
+    }
+
+    public function detachMembers(array $data): ProjectResource
+    {
+        $project = Project::findOrFail($data['id']);
+
+        return DB::transaction(function () use ($data, $project) {
+            $project->members()->detach($data['users']);
+
+            return new ProjectResource($project);
+        }); 
+    }
+
     public function syncProjectManagersBasedOnOrganizationManagers(Project $project): void
     {
         $this->upsertManagers(

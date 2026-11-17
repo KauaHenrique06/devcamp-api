@@ -2,6 +2,8 @@
 
 namespace App\Policies;
 
+use App\Enums\ProjectRole;
+use App\Models\Project;
 use App\Models\User;
 use App\Support\Tenancy\CurrentOrganization;
 use Illuminate\Auth\Access\Response;
@@ -113,5 +115,30 @@ class ProjectPolicy
         return $this->currentOrganization->get()?->roleOf($user)?->canManage() 
             ? Response::allow()
             : Response::deny("Apenas o dono da organizacao e os administradores podem remover permanentemente projetos");
+    }
+
+    public function addMember(User $user, string $id): Response
+    {
+        $userRoleInProject = $this->canManageMembers($user, $id);
+
+        return (! is_null($userRoleInProject) && $userRoleInProject->canAddMembers())
+            ? Response::allow()
+            : Response::deny("Apenas os gerentes do projeto podem adicionar novos membros ao projeto!");
+    }
+
+    public function removeMember(User $user, string $id): Response
+    {
+        $userRoleInProject = $this->canManageMembers($user, $id);
+
+        return (! is_null($userRoleInProject) && $userRoleInProject->canAddMembers())
+            ? Response::allow()
+            : Response::deny("Apenas os gerentes do projeto podem remover membros do projeto!");
+    }
+
+    private function canManageMembers(User $user, string $projectId): ProjectRole | null
+    {
+        $project = Project::findOrFail($projectId);
+
+        return $project->roleOf($user);
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Project\Project;
+use App\Http\Controllers\Project\ProjectMember;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,4 +17,7 @@ Route::middleware(['auth.api', 'organization'])->group(function () {
     Route::patch('/{id}/restore', [Project::class, 'restore']);
     Route::patch('/{id}/archive', [Project::class, 'toggleArchive']);
     Route::delete('/{id}/force', [Project::class, 'forceDelete']);
+
+    Route::post('/{id}/add-members', [ProjectMember::class, 'attachNewMembers']);
+    Route::post('/{id}/remove-members', [ProjectMember::class, 'detachMembers']);
 });
